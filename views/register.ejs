@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("./partials/head", {title: "Register - FileStorage"}) %>
+    <%- include("./partials/header") %>
+  <body>
+      <div class="scroll">
+        <div class="form-container">
+          <form class="form-style" action="/register" method="POST" >
+            <h1>Register</h1>
+            <div class="errors">
+              <% if(locals.errors) {%>
+                <ul>
+                  <% errors.forEach((error) => {%>
+                    <li class="error">
+                      <%= error.msg%>
+                    </li>
+                    <% }) %>
+                  </ul>
+                  <% } %>
+                </div>
+                <div class="form-content">
+                  <div class="form-left">
+                    <label for="username">Username:</label>
+                    <label for="password">Password:</label>
+                    <label for="confirmPassword">Confirm Password:</label>
+                  </div>
+                  <div class="form-right">
+                    <input type="text" name="username" value="<%= locals.inputData?.username ?? ""%>" required>
+                    <input type="password" name="password" required>
+                    <input type="password" name="confirmPassword" required> 
+                  </div> 
+                </div>
+                <button class="form-btn" type="submit">Register</button>
+              </form>
+            </div> 
+          </div>
+        </body>
+</html>

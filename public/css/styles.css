@@ -1,0 +1,401 @@
+:root {
+  --txt: rgb(255, 255, 255);
+  --txt-secondary: rgb(218, 218, 218);
+  --colorA: rgb(151, 49, 254);
+  --colorA-light: rgb(181, 108, 255);
+  --colorB: rgb(36, 20, 62);
+  --bgc: #1b1b1d;
+  --container-bgc: rgb(113, 79, 154);
+  --container-outline: black;
+  --active: rgb(90, 19, 205);
+  --hover: rgb(109, 22, 248);
+  --text-outline-color: rgba(6, 6, 6, 0.5);
+}
+
+/* 1. Use a more-intuitive box-sizing model */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* 2. Remove default margin */
+*:not(dialog) {
+  margin: 0;
+}
+
+a {
+  color: white;
+  text-decoration: none;
+}
+
+/* 3. Enable keyword animations */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    interpolate-size: allow-keywords;
+  }
+}
+
+body {
+  /* 4. Increase line-height */
+  line-height: 1.5;
+  /* 5. Improve text rendering */
+  -webkit-font-smoothing: antialiased;
+  font-family: system-ui;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  color: var(--txt);
+}
+
+/* 6. Improve media defaults */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* 7. Inherit fonts for form controls */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+/* Remove list padding and text styles */
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none; /* if you don't want bullets */
+  text-decoration: none;
+}
+
+/* 8. Avoid text overflows */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+/* 9. Improve line wrapping */
+p {
+  text-wrap: pretty;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  text-wrap: balance;
+}
+
+/*
+  10. Create a root stacking context
+*/
+#root,
+#__next {
+  isolation: isolate;
+}
+
+body {
+  background-color: var(--bgc);
+  height: 100vh;
+}
+
+header {
+  flex: 0 0 auto;
+  /* width: 100%; */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--colorA);
+  padding: 0.5rem 1rem;
+}
+
+.headerBtnDiv {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.headerBtn {
+  background-color: black;
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  text-transform: uppercase;
+  font-weight: 900;
+  border: none;
+  color: white;
+  line-height: 1rem;
+  cursor: pointer;
+}
+
+.headerBtn:hover {
+  background-color: var(--hover);
+}
+
+.headerBtn:active {
+  background-color: var(--active);
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: auto;
+  display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  -webkit-border-radius: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+::-webkit-scrollbar-thumb:window-inactive {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.form-container {
+  display: flex;
+  padding-top: 10rem;
+  width: 100%;
+  height: 100%;
+  /* align-items: center; */
+  justify-content: center;
+  padding: 1rem;
+  gap: 10rem;
+}
+
+.form-content {
+  display: flex;
+  width: 100%;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.form-style {
+  width: 500px;
+  align-self: center;
+  justify-self: center;
+  background-color: var(--colorB);
+  border: 2px solid var(--colorA);
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.form-style > h1 {
+  text-transform: uppercase;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  line-height: 90%;
+  text-align: center;
+}
+
+.form-left,
+.form-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-left > label,
+.form-right > input {
+  height: 2rem;
+}
+
+.form-left > label {
+  display: flex;
+  align-items: center;
+}
+
+.form-right {
+  width: 100%;
+}
+
+.form-right > input {
+  border: none;
+  border-radius: 0.5rem;
+  padding-left: 0.7rem;
+}
+
+.error {
+  color: red;
+}
+
+.form-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.3rem 0;
+  background-color: var(--colorA);
+  color: white;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.form-btn:hover {
+  background-color: var(--hover);
+  outline: 2px solid white;
+}
+
+.form-btn:active {
+  background-color: var(--active);
+  outline: 2px solid grey;
+}
+
+.errors {
+  padding-top: 0.5rem;
+}
+
+/* messages */
+.msg-cont {
+  background-color: rgb(242, 234, 220);
+  border: solid black 2px;
+  border-radius: 0.5rem;
+  width: 300px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.msg-titlebar {
+  position: relative;
+  background-color: var(--colorA);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  padding: 0.5rem 2rem;
+  font-size: medium;
+  line-height: 105%;
+  text-align: center;
+}
+
+.msg-titlebar > h3 {
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+}
+
+.msg-infobar {
+  padding: 0.3rem 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--colorA-light);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  font-weight: 500;
+  font-size: small;
+}
+
+.name {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.msg {
+  padding: 0.5rem;
+  color: rgb(26, 26, 26);
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+textarea {
+  max-height: 300px;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  field-sizing: content;
+}
+
+.redacted {
+  background-color: black;
+  color: black;
+}
+
+.logout-form {
+  display: inline;
+  display: flex;
+}
+
+.logoutBtn {
+  color: white;
+  border: none;
+}
+
+.headerUsername {
+  background-color: black;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  font-weight: 800;
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  transform: translateX(-50%);
+  text-transform: uppercase;
+}
+
+.deleteBtn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+  color: white;
+  font-weight: 900;
+  border: none;
+  padding: 0.5rem;
+}
+
+.deleteBtn:hover {
+  background-color: red;
+}
+
+.deleteBtn:active {
+  background-color: grey;
+}
+
+.errorPage {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errorPage > h1 {
+  font-size: 3rem;
+}
