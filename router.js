@@ -61,6 +61,7 @@ router.get(
 
 router.get(
   "/user/file/:fileId/download",
+  requireAuth,
   validateFileId,
   handleRequestValidation,
   requireItemOwner,
