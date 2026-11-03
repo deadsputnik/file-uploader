@@ -114,16 +114,29 @@ body {
 
 header {
   flex: 0 0 auto;
-  /* width: 100%; */
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   background-color: var(--colorA);
   padding: 0.5rem 1rem;
 }
 
-.headerBtnDiv {
+header > h1 {
+  flex: 1;
+  align-self: flex-end;
+}
+
+.headerMiddleBtnDiv {
+  flex: 0 0 1200px;
   display: flex;
+  justify-content: center;
+  max-width: 1200px;
+}
+
+.headerBtnDiv {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 
