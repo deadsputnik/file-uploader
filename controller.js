@@ -10,13 +10,9 @@ function errorHandler(error, req, res, next) {
   if (res.headersSent) {
     return next(error);
   }
-  let message = "Server Error";
 
-  if (!error.code) {
-    message = error;
-  }
   console.log(error);
-  res.status(500).render("./error.ejs", { status: 500, error: message });
+  res.status(500).render("./error.ejs", { status: 500, error: "Server error" });
 }
 
 function requireAuth(req, res, next) {
