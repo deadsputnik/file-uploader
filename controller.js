@@ -350,7 +350,9 @@ async function stopSharingFolder(req, res, next) {
   const { folderId, token } = matchedData(req);
   try {
     await removeShare(token);
-    const folderInfo = prisma.folder.findUnique({ where: { id: folderId } });
+    const folderInfo = await prisma.folder.findUnique({
+      where: { id: folderId },
+    });
     res.redirect(`/user/folder/${folderInfo.parentId ?? 0}`);
   } catch (error) {
     next(error);
