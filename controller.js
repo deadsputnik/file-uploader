@@ -357,19 +357,11 @@ async function stopSharingFolder(req, res, next) {
 }
 
 async function removeShare(token, folderId) {
-  try {
-    const delRes = await prisma.shareLink.delete({
-      where: { token },
-      include: { folder: true },
-    });
-    console.log(delRes);
-
-    if (!delRes) throw new Error("Server error");
-    return delRes.folder;
-  } catch (error) {
-    console.log(error);
-    throw new Error("Oh no");
-  }
+  const share = await prisma.shareLink.delete({
+    where: { token, folderId: folderId },
+    include: { folder: true },
+  });
+  return share.folder;
 }
 
 async function requireShareAccess(req, res, next) {
