@@ -1,0 +1,12 @@
+<div class="file entry">
+  <p class="fe-icon"><%- locals.icons.file %></p>
+  <p class="fe-name"><%= file.name %></p>
+  <p class="fe-date"><%= locals.formatDate(file.uploadedOn) %></p>
+  <p class="fe-size"><%= file.size%></p>
+  <div class="fe-options">
+    <a class="downloadIcon" href="/share/<%= token %>/file/<%=file.id%>/download"
+      ><%- locals.icons.download %></a
+    >
+    </form>
+  </div>
+</div>

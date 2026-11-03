@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+    <%- include("./partials/head", {title: `${status} - ${error}`}) %>
+    <%- include("./partials/header") %>
+  <body>
+        <div class="errorPage">
+          <h1><%= status %>: <%= error %></h1>
+        </div>
+  </body>
+</html>

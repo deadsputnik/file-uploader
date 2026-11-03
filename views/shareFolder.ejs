@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include("./partials/head", {title: "Share Folder - FileStorage"}) %>
+    <%- include("./partials/header") %>
+  <body>
+      <div class="scroll">
+        <div class="form-container">
+          <form class="form-style" action="/user/folder/<%= folderInfo.id %>/<%= !locals.link ? "share" : "stopShare" %>" method="POST" >
+            <a class="return-btn" href="/user/folder/<%= folderInfo.parentId || 0%>"><%- locals.icons.up %></a>
+            <h3 style="text-align: center;">Share folder: <%= folderInfo.name  %></h3>
+            <% if (locals.link){ %>
+            <div class="errors">
+              <p>Link:</p>
+              <a href="/share/<%= locals.link %>">/share/<%=locals.link%></a>
+              </div>
+              <% } %>
+                <div class="form-content">
+                  <fieldset>
+                    <legend>For how long would you like to share this folder?</legend>
+                        <input type="radio" id="2min" name="shareDuration" value="2" checked />
+                      <label for="shareDuration">2 Minutes</label>
+                    </div> 
+                </fieldset>
+                <input type="hidden" name="token" value="<%= locals.link %>">
+                <button class="form-btn" type="submit"><%= locals.link ? "Stop Sharing" : "Share" %></button>
+              </form>
+          </div>
+        </body>
+</html>

@@ -79,7 +79,7 @@ ol {
 p,
 h1,
 h2,
-h3,
+m3,
 h4,
 h5,
 h6 {
@@ -398,4 +398,248 @@ textarea {
 
 .errorPage > h1 {
   font-size: 3rem;
+}
+
+/* Files menubar */
+
+.menubar-container {
+  min-width: 100%;
+  padding: 0.5rem 0.5rem;
+  background-color: rgb(88, 0, 181);
+  display: flex;
+  justify-content: center;
+}
+
+.files-menubar {
+  width: 100%;
+  max-width: 1200px;
+  gap: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: space-between;
+}
+
+.menubar-btn-div {
+  display: flex;
+  position: relative;
+}
+
+.menubar-left {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.back-btn-div {
+  width: 34px;
+}
+
+.back-btn > svg {
+  flex: 1;
+  width: 25px;
+  height: 25px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.back-btn > svg:hover {
+  color: white;
+}
+
+.menubar-btn {
+  padding: 0.1rem 0.5rem;
+  display: inline-block;
+  margin: 0;
+}
+
+.new-folder-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.new-folder-form > input {
+  width: 150px;
+  border: none;
+  border-radius: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.menubar-error {
+  position: absolute;
+  top: -2rem;
+  width: 100vh;
+  color: rgb(255, 208, 0);
+}
+
+/* ENTRIES */
+.file-explorer {
+  display: flex;
+  flex-direction: column;
+  min-width: 100%;
+  align-items: center;
+  padding: 0.5rem;
+  gap: 0.5rem;
+}
+
+.files-titlebar {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 0.1rem;
+  gap: 0.7rem;
+}
+
+.entry {
+  width: 100%;
+  max-width: 1200px;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: solid 1px grey;
+  border-radius: 0.5rem;
+  padding: 0.1rem;
+  gap: 0.7rem;
+  position: relative;
+}
+
+.entry:hover {
+  outline: solid rgba(255, 255, 255, 0.3) 1px;
+}
+
+.folder:hover {
+  background-color: rgb(95, 95, 237);
+}
+
+.folder:active {
+  outline: solid white 2px;
+}
+
+.file {
+  background-color: rgb(81, 40, 132);
+}
+
+.folder {
+  background-color: rgb(80, 80, 200);
+}
+
+.shared {
+  filter: hue-rotate(-10deg);
+  outline: solid 2px rgb(198, 162, 0);
+}
+
+.shared:hover {
+  outline: solid 2px rgb(255, 208, 0);
+}
+
+.entry-link {
+  display: contents;
+}
+
+.entry-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.fe-icon {
+  width: 27px;
+}
+
+.fe-name {
+  flex: 1;
+  /* padding-left: 0.3rem; */
+}
+
+.fe-date {
+  width: 120px;
+}
+.fe-size {
+  width: 50px;
+}
+.fe-options {
+  min-width: 66px;
+  flex: 0;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-right: 0.3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.downloadIcon {
+  width: 27px;
+}
+
+.downloadIcon,
+.delBtn {
+  color: white;
+  /* filter: invert(25%); */
+}
+
+.downloadIcon:hover {
+  color: rgb(202, 174, 46);
+}
+
+.downloadIcon:active {
+  color: rgb(255, 234, 0);
+}
+
+.formIcon {
+  display: inline-block;
+  background-color: transparent;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  width: 25px;
+}
+
+.del:hover {
+  color: rgb(174, 0, 0);
+}
+
+.del:active {
+  color: red;
+}
+
+.share {
+  padding: 0;
+}
+
+.share:hover {
+  color: rgb(0, 211, 211);
+}
+
+.share:active {
+  color: aqua;
+}
+
+.homepage-div {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.homepage-div > p {
+  max-width: 1200px;
+  font-size: larger;
+  padding-top: 4rem;
+}
+
+.return-btn {
+  position: absolute;
+}
+
+.return-btn > svg {
+  width: 25px;
+  height: 25px;
+  transform: rotate(-90deg);
+  color: grey;
+}
+
+.return-btn > svg:hover {
+  color: white;
 }

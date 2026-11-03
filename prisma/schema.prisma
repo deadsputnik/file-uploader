@@ -19,4 +19,39 @@ model User {
   username     String   @unique
   passwordHash String
   accCreated   DateTime @default(now())
+  files        File[]
+  folders      Folder[]
+}
+
+model File {
+  id         Int      @id @default(autoincrement())
+  name       String
+  owner      User     @relation(fields: [ownerId], references: [id])
+  ownerId    Int
+  size       Int
+  link       String
+  uploadedOn DateTime @default(now())
+  folder     Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId   Int?
+}
+
+model Folder {
+  id         Int         @id @default(autoincrement())
+  name       String
+  owner      User        @relation(fields: [ownerId], references: [id])
+  ownerId    Int
+  parentId   Int?
+  parent     Folder?     @relation("Tree", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Folder[]    @relation("Tree")
+  files      File[]
+  shareLinks ShareLink[]
+}
+
+model ShareLink {
+  id          Int      @id @default(autoincrement())
+  token       String   @unique @default(uuid())
+  expiresAt   DateTime
+  folder      Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folderId    Int
+  childrenIds Int[]
 }

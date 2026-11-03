@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include("./partials/head", {title: "Shared Files - FileStore"}); %>
+  </head>
+<body>
+  <%- include("./partials/header") %>
+  <main>
+    <div class="menubar-container">
+      <div class="files-menubar">
+        <div class="menubar-left">
+          <div class="back-btn-div">
+            <% if(!folderIsRoot) {%>
+              <a class="back-btn" href="/share/<%= token %>/folder/<%= currFolder.parentId %>" ><%- locals.icons.up %></a>
+            <% } %>
+          </div>
+          <h4 style="text-transform: uppercase;"><%= currFolder.name %></h3>
+          </div>
+          <div class="menubar-btn-div">
+            
+          </div>
+      </div>
+    </div>
+    <div class="scroll">
+        <div class="file-explorer">
+          <div class="files-titlebar">
+            <div class="fe-icon"></div>
+            <p class="fe-name">NAME</p>
+            <p class="fe-date">CREATED</p>
+            <p class="fe-size">SIZE</p>
+            <p class="fe-options">OPTIONS</p>
+          </div>
+            <% folders.forEach(folder => { %>
+              <%- include("./partials/sharedFolderEntry", {folder, token}); %>
+            <%}); %>
+
+          <% files.forEach(file => { %>          
+            <%- include("./partials/sharedFileEntry", {file, token}); %>
+          <%}); %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

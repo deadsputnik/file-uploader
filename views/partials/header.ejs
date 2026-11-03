@@ -1,8 +1,15 @@
 <header>
   <h1><a href="/" class="logo"">FileStore</a></h1>
+  <% if(locals.loggedIn) {%>
+  <a class="headerBtn" href="/user/folder/0">Files</a>
+  <% } %>
   <nav class="headerBtnDiv">
-    <% if(locals.loggedIn) {%>
-      <a class="headerBtn" href="/upload">Upload a file</a>
+
+
+    <% if(locals.loggedIn) {%> 
+      <% if(locals.folderInfo?.id >= 0) {%>
+      <a class="headerBtn" href="/user/folder/<%= folderInfo.id %>/upload">Upload a file</a>
+<% } %>
       <form action="/logout" method="POST" >
         <button class="headerBtn" type="submit">Logout</button>
       </form>
@@ -10,5 +17,8 @@
         <a class="headerBtn" href="/register">Register</a>
       <a class="headerBtn" href="/login">Login</a>
       <%} %>
+
+
+
   </nav>
 </header>

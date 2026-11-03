@@ -1,0 +1,22 @@
+<div class="file entry <%= shared? "shared": "" %>">
+  <p class="fe-icon"><%- locals.icons.file %></p>
+  <p class="fe-name"><%= file.name %></p>
+  <p class="fe-date"><%= locals.formatDate(file.uploadedOn) %></p>
+  <p class="fe-size"><%= file.size%></p>
+  <div class="fe-options">
+    <a class="downloadIcon" href="/user/file/<%=file.id%>/download"
+      ><%- locals.icons.download %></a
+    >
+    <form
+      action="/user/file/<%=file.id%>/delete"
+      method="POST"
+      onsubmit="
+        return confirm('Are you sure you want to delete <%= file.name%>?');
+      "
+    >
+      <button class="formIcon del" type="submit">
+        <%- locals.icons.delete %>
+      </button>
+    </form>
+  </div>
+</div>

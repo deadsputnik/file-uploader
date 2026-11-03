@@ -7,9 +7,27 @@
   <%- include("./partials/header") %>
   <main>
     <div class="scroll">
-      <form action="/upload" method="post">
-        
-      </form>
+      <div class="form-container">
+        <form class="form-style" action="/user/folder/<%=locals.folderId%>/upload" method="POST" enctype="multipart/form-data">
+          <h1>Upload a file</h1>
+          <div class="errors">
+            <% if(locals.errors) {%>
+              <ul>
+                <% errors.forEach((error) => {%>
+                  <li class="error">
+                    <%= error.msg%>
+                  </li>
+                <% }) %>
+              </ul>
+            <% } %>
+          </div>
+          <div class="form-content">
+            <input type="hidden" name="folderId" value="<%=locals.folderId%>">
+            <input type="file" name="uploaded_file" multiple required> 
+          </div>
+          <button class="form-btn" type="submit"> Upload file</button>
+        </form>
+      </div>
     </div>
   </main>
 </body>

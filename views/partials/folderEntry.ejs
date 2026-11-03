@@ -1,0 +1,28 @@
+<div class="folder entry <%= shared?"shared": "" %> <%= root ? "root" : ""%>">
+<a class="entry-link" href="/user/folder/<%= folder.id %>"></a>
+<p class="fe-icon"><%- locals.icons.folder %></p>
+  <p class="fe-name"><%= folder.name %></p>
+  <p class="fe-date"></p>
+  <p class="fe-size"></p>
+  <div class="fe-options">
+    <% if (!shared || root){ %>
+      <a class="formIcon share" href="/user/folder/<%= folder.id %>/share">
+        <%- locals.icons.share %>
+      </a>
+      <% } %>
+      <form
+      action="/user/folder/<%=folder.id%>/delete"
+      method="POST"
+      onsubmit="
+        return confirm(
+          'Are you sure you want to delete folder <%=folder.name%> and all the files inside it?',
+        );
+        "
+    >
+      <button class="formIcon del" type="submit">
+        <%- locals.icons.delete %>
+      </button>
+    </form>
+  </div>
+  
+</div>

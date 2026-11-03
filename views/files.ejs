@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include("./partials/head", {title: "Files - FileStore"}); %>
+  </head>
+<body>
+  <%- include("./partials/header", {folderInfo}) %>
+  <main>
+    <div class="menubar-container">
+      <div class="files-menubar">
+        <div class="menubar-left">
+          <div class="back-btn-div">
+            <% if(folderInfo.name != "root") {%>
+              <a class="back-btn" href="<%= folderInfo.parentId ? `/user/folder/${folderInfo.parentId}`:"/user/folder/0"%>" ><%- locals.icons.up %></a>
+            <% } %>
+          </div>
+          <h4 style="text-transform: uppercase;"><%= folderInfo.name %></h3>
+          </div>
+          <div class="menubar-btn-div">
+            <form class="new-folder-form" action="/user/folder/<%= folderInfo.id %>/create-new-folder" method="post">
+              <input type="hidden" name="parentFolderId" id="dslfdas" value="<%= locals.folderInfo.id || 0 %>" >
+              <input type="text" name="folderName" maxlength="70" placeholder="New Folder Name" value="<%= locals.flash?.folderName %>" required >
+              <button class="form-btn menubar-btn" type="submit">Create Folder</button>
+            </form>
+            <% if(locals.flash?.errors) {%>
+              <div class="menubar-error">
+                <% flash.errors.forEach(error => {%>
+                  <p><%= error.msg %></p>
+                <% }) %>
+              </div>
+            <% } %>
+            
+          </div>
+      </div>
+    </div>
+    <div class="scroll">
+        <div class="file-explorer">
+          <div class="files-titlebar">
+            <div class="fe-icon"></div>
+            <p class="fe-name">NAME</p>
+            <p class="fe-date">CREATED</p>
+            <p class="fe-size">SIZE</p>
+            <p class="fe-options">OPTIONS</p>
+          </div>
+            <% folders.forEach(folder => { %>
+              <%- include("./partials/folderEntry", {folder, shared: sharedFolderIds.includes(folder.id), root: rootIds.includes(folder.id)}); %>
+            <%}); %>
+
+          <% files.forEach(file => { %>          
+            <%- include("./partials/fileEntry", {file, shared: sharedFolderIds.includes(file.folderId)}); %>
+          <%}); %>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

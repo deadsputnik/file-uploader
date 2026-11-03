@@ -2,9 +2,68 @@ import { matchedData } from "express-validator";
 import { prisma } from "./lib/prisma.js";
 import bcrypt from "bcryptjs";
 import passport from "passport";
+import { unlink } from "node:fs/promises";
+import { sign } from "node:crypto";
 
-function checkAuth(req, res, next) {
-  req.user ? next() : res.redirect("/sign-in");
+function errorHandler(error, req, res, next) {
+  console.log("ERROR HANDLER");
+  if (res.headersSent) {
+    return next(error);
+  }
+  let message = "Server Error";
+
+  if (!error.code) {
+    message = error;
+  }
+  console.log(error);
+  res.status(500).render("./error.ejs", { status: 500, error: message });
+}
+
+function requireAuth(req, res, next) {
+  req.user ? next() : res.redirect("/login");
+}
+
+async function checkFolderAuth(folderId, userId) {
+  try {
+    const folder = await prisma.folder.findUnique({
+      where: { id: folderId, ownerId: userId },
+    });
+    return folder ? true : false;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+async function checkFileAuth(fileId, userId) {
+  try {
+    const file = await prisma.file.findUnique({
+      where: { id: fileId, ownerId: userId },
+    });
+    return file ? true : false;
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+async function requireItemOwner(req, res, next) {
+  const { folderId, fileId } = matchedData(req);
+  try {
+    if (folderId === 0) return next();
+    let check = false;
+    if (folderId !== 0) {
+      if (folderId) check = await checkFolderAuth(folderId, req.user.id);
+    }
+
+    if (fileId) check = await checkFileAuth(fileId, req.user.id);
+    if (!check)
+      return res.status(404).render("error", {
+        status: 404,
+        error: `${folderId ? "Folder" : "File"} Not Found`,
+      });
+    next();
+  } catch (error) {
+    next(error);
+  }
 }
 
 function getHomepage(req, res) {
@@ -12,7 +71,8 @@ function getHomepage(req, res) {
 }
 
 function getAddFile(req, res) {
-  res.render("addFile");
+  const { folderId } = matchedData(req);
+  res.render("addFile", { folderId });
 }
 
 function getRegister(req, res) {
@@ -41,6 +101,22 @@ async function registerAccount(req, res, next) {
   }
 }
 
+async function uploadFile(req, res) {
+  const { folderId } = matchedData(req);
+  const files = req.files;
+
+  await prisma.file.createMany({
+    data: files.map((file) => ({
+      name: file.originalname,
+      ownerId: req.user.id,
+      link: file.path,
+      size: file.size,
+      folderId: folderId || null,
+    })),
+  });
+  res.redirect(`/user/folder/${folderId}`);
+}
+
 const signInUser = [
   passport.authenticate("local", {
     successRedirect: "/",
@@ -56,8 +132,339 @@ function logout(req, res, next) {
   });
 }
 
+async function download(req, res, next) {
+  const { fileId } = matchedData(req);
+  try {
+    const fileInfo = await prisma.file.findUnique({
+      where: { id: fileId },
+    });
+
+    if (!fileInfo) {
+      return res
+        .status(404)
+        .render("error", { status: 404, message: "File not found" });
+    }
+
+    const path = fileInfo.link;
+    const filename = fileInfo.name;
+    console.log("downloading: " + filename);
+    res.download(path, filename);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteFile(req, res, next) {
+  const { fileId } = matchedData(req);
+  try {
+    const delRes = await prisma.file.delete({
+      where: { id: fileId, ownerId: req.user.id },
+    });
+    await unlink(delRes.link).catch((e) => {
+      if (e.code !== "ENOENT") throw e;
+    });
+    res.redirect(req.get("Referer") || "/");
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getSharedFolderList(userId) {
+  try {
+    const response = await prisma.shareLink.findMany({
+      where: {
+        folder: {
+          ownerId: userId,
+        },
+      },
+      select: { childrenIds: true, folderId: true },
+    });
+    const idList = response.flatMap((entry) => entry.childrenIds);
+    const sharedFolderIds = [...new Set(idList)];
+
+    const rootList = response.flatMap((entry) => entry.folderId);
+    const rootIds = [...new Set(rootList)];
+
+    return { sharedFolderIds, rootIds };
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+async function getFolder(req, res, next) {
+  const { folderId } = matchedData(req);
+
+  try {
+    const folders = await prisma.folder.findMany({
+      where: { ownerId: req.user.id, parentId: folderId || null },
+    });
+
+    const files = await prisma.file.findMany({
+      where: { ownerId: req.user.id, folderId: folderId || null },
+    });
+
+    const folderInfo =
+      folderId !== 0
+        ? await prisma.folder.findUnique({
+            where: { id: folderId },
+          })
+        : { name: "root", id: 0 };
+
+    const { sharedFolderIds, rootIds } = await getSharedFolderList(req.user.id);
+
+    const flash = req.session.flash;
+    delete req.session.flash;
+    res.render("files", {
+      folders,
+      files,
+      flash,
+      folderInfo,
+      sharedFolderIds,
+      rootIds,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createFolder(req, res, next) {
+  const { folderId, folderName } = matchedData(req);
+  console.log("creating new folder");
+  try {
+    const newFolder = await prisma.folder.create({
+      data: {
+        name: folderName,
+        ownerId: req.user.id,
+        parentId: folderId || null,
+      },
+    });
+    if (!newFolder) return res.render("error", { message: "oh no" });
+
+    // check if parent in share > update share childrenIds
+    const shares = await prisma.shareLink.findMany({
+      where: { childrenIds: { has: newFolder.parentId } },
+    });
+
+    for (const share of shares) {
+      const childrenIds = await getDescendantIds(share.folderId);
+      const response = await prisma.shareLink.update({
+        where: { id: share.id },
+        data: { childrenIds },
+      });
+    }
+
+    res.redirect(req.get("Referer") || "/");
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getDescendantIds(folderId) {
+  const ids = [folderId];
+  let current = [folderId];
+
+  while (current.length > 0) {
+    const children = await prisma.folder.findMany({
+      where: { parentId: { in: current } },
+      select: { id: true },
+    });
+    current = children.map((c) => c.id);
+    ids.push(...current);
+  }
+  return ids;
+}
+
+async function deleteFolder(req, res, next) {
+  const { folderId } = matchedData(req);
+
+  try {
+    const folderIds = await getDescendantIds(folderId);
+
+    const fileList = await prisma.file.findMany({
+      where: { folderId: { in: folderIds } },
+      select: { link: true },
+    });
+
+    await Promise.all(fileList.map((file) => unlink(file.link)));
+
+    const result = await prisma.folder.delete({
+      where: { id: folderId },
+    });
+
+    if (!result) {
+      return next(new Error("Server Error"));
+    }
+
+    res.redirect(req.get("Referer") || "/");
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getShareFolder(req, res, next) {
+  const { folderId } = matchedData(req);
+  try {
+    const folderInfo = await prisma.folder.findUnique({
+      where: { id: folderId },
+    });
+
+    const shared = await prisma.shareLink.findFirst({
+      where: { folderId },
+    });
+
+    let link = false;
+
+    if (shared) link = shared.token;
+
+    res.render("shareFolder", { folderInfo, link });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function shareFolder(req, res, next) {
+  const { folderId, shareDuration } = matchedData(req);
+
+  try {
+    const folderInfo = await prisma.folder.findUnique({
+      where: { id: folderId },
+    });
+    const shareForMs = shareDuration * 60 * 1000;
+    const expiresAt = new Date(Date.now() + shareForMs);
+    const childIds = await getDescendantIds(folderId);
+    const response = await prisma.shareLink.create({
+      data: {
+        expiresAt: expiresAt,
+        folderId: folderId,
+        childrenIds: childIds,
+      },
+    });
+
+    res.render("shareFolder", { folderInfo, link: response.token });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function stopSharingFolder(req, res, next) {
+  const { folderId, token } = matchedData(req);
+  try {
+    await removeShare(token);
+    const folderInfo = prisma.folder.findUnique({ where: { id: folderId } });
+    res.redirect(`/user/folder/${folderInfo.parentId ?? 0}`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function removeShare(token) {
+  try {
+    const delRes = await prisma.shareLink.delete({
+      where: { token },
+    });
+    if (!delRes) throw new Error("Server error");
+  } catch (error) {
+    console.log(error);
+    throw new Error("Oh no");
+  }
+}
+
+async function requireShareAccess(req, res, next) {
+  const { token, folderId, fileId } = matchedData(req);
+  try {
+    const shareInfo = await prisma.shareLink.findUnique({
+      where: { token },
+    });
+
+    if (fileId) {
+      const fileInfo = await prisma.file.findUnique({
+        where: { id: fileId },
+      });
+
+      if (!fileInfo || shareInfo.childrenIds.includes(fileId)) {
+        if (fileInfo)
+          console.log("Unauthorised access blocked file:", fileInfo.name);
+        return res
+          .status(404)
+          .render("error", { status: 404, error: "File not found" });
+      }
+    }
+
+    if (folderId) {
+      const folderInfo = await prisma.folder.findUnique({
+        where: { id: folderId },
+      });
+      if (!folderInfo || !shareInfo.childrenIds.includes(folderInfo.id)) {
+        if (folderInfo)
+          console.log("Unauthorised access blocked. Folder:", folderInfo.name);
+        return res
+          .status(404)
+          .render("error", { status: 404, error: "Folder not found" });
+      }
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function shareRedirect(req, res, next) {
+  const { token } = matchedData(req);
+
+  try {
+    const shareInfo = await prisma.shareLink.findUnique({
+      where: { token: token },
+    });
+    console.log("SHARE INFO", shareInfo);
+
+    if (!shareInfo) {
+      return res
+        .status(404)
+        .render("error", { status: 404, error: "Share not found" });
+    }
+
+    res.redirect(`/share/${token}/folder/${shareInfo.folderId}`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getSharedFolder(req, res, next) {
+  const { token, folderId } = matchedData(req);
+  try {
+    const shareInfo = await prisma.shareLink.findUnique({
+      where: { token },
+    });
+    const folderIsRoot = shareInfo.folderId == folderId;
+
+    const currFolder = await prisma.folder.findUnique({
+      where: { id: folderId },
+    });
+
+    const folders = await prisma.folder.findMany({
+      where: { parentId: currFolder.id || null },
+    });
+
+    const files = await prisma.file.findMany({
+      where: { folderId: currFolder.id || null },
+    });
+
+    res.render("sharedFiles", {
+      folders,
+      files,
+      currFolder,
+      folderIsRoot,
+      token,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export {
-  checkAuth,
+  errorHandler,
+  requireAuth,
+  requireItemOwner,
   getHomepage,
   getAddFile,
   getRegister,
@@ -65,4 +472,16 @@ export {
   registerAccount,
   signInUser,
   logout,
+  uploadFile,
+  getFolder,
+  download,
+  deleteFile,
+  createFolder,
+  deleteFolder,
+  getShareFolder,
+  shareFolder,
+  stopSharingFolder,
+  requireShareAccess,
+  getSharedFolder,
+  shareRedirect,
 };
