@@ -408,7 +408,6 @@ async function shareRedirect(req, res, next) {
     const shareInfo = await prisma.shareLink.findUnique({
       where: { token: token },
     });
-    console.log("SHARE INFO", shareInfo);
 
     if (!shareInfo) {
       return res
