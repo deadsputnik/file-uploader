@@ -170,7 +170,6 @@ router.post(
   "/user/folder/:folderId/share",
   requireAuth,
   validateFolderId,
-  handleRequestValidation,
   validateShareTime,
   handleRequestValidation,
   requireItemOwner,
