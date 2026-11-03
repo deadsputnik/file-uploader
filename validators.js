@@ -4,7 +4,6 @@ import { prisma } from "./lib/prisma.js";
 const validateRegistration = [
   body("username")
     .trim()
-    .toLowerCase()
     .notEmpty()
     .withMessage("Username is required")
     .isAlphanumeric()
