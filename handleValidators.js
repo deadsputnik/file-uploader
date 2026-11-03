@@ -4,7 +4,9 @@ import { prisma } from "./lib/prisma.js";
 function handleRequestValidation(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(400).render("error", { status: 400, error: "Invalid request" });
+    return res
+      .status(400)
+      .render("error", { status: 400, error: "Invalid request" });
   }
   next();
 }
@@ -15,13 +17,10 @@ function handleRegistrationValidation(req, res, next) {
     const inputData = {};
     inputData.username = req.body.username;
     console.log(errors);
-    if (!errors.isEmpty()) {
-      return res
-        .status(400)
-        .render("register", { inputData, errors: errors.array() });
-    }
+    return res
+      .status(400)
+      .render("register", { inputData, errors: errors.array() });
   }
-  console.log("validation successful");
   next();
 }
 
@@ -29,7 +28,7 @@ function handleSignInValidation(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const inputUsername = req.body.username;
-    res
+    return res
       .status(400)
       .render("sign-in", { inputUsername, errors: errors.array() });
   }
@@ -43,7 +42,7 @@ function handleFolderNameValidation(req, res, next) {
       errors: errors.array(),
       folderName: req.body.folderName,
     };
-    res.redirect(req.get("Referer") || "/");
+    return res.redirect(req.get("Referer") || "/");
   }
   next();
 }
