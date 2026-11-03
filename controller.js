@@ -380,10 +380,8 @@ async function requireShareAccess(req, res, next) {
       const fileInfo = await prisma.file.findUnique({
         where: { id: fileId },
       });
-
-      if (!fileInfo || shareInfo.childrenIds.includes(fileId)) {
-        if (fileInfo)
-          console.log("Unauthorised access blocked file:", fileInfo.name);
+      if (!fileInfo || !shareInfo.childrenIds.includes(fileInfo.folderId)) {
+        console.log("Unauthorised access blocked file:", fileInfo.name);
         return res
           .status(404)
           .render("error", { status: 404, error: "File not found" });
@@ -395,13 +393,13 @@ async function requireShareAccess(req, res, next) {
         where: { id: folderId },
       });
       if (!folderInfo || !shareInfo.childrenIds.includes(folderInfo.id)) {
-        if (folderInfo)
-          console.log("Unauthorised access blocked. Folder:", folderInfo.name);
+        console.log("Unauthorised access blocked. Folder:", folderInfo.name);
         return res
           .status(404)
           .render("error", { status: 404, error: "Folder not found" });
       }
     }
+
     next();
   } catch (error) {
     next(error);
