@@ -142,7 +142,7 @@ async function download(req, res, next) {
     if (!fileInfo) {
       return res
         .status(404)
-        .render("error", { status: 404, message: "File not found" });
+        .render("error", { status: 404, error: "File not found" });
     }
 
     const path = fileInfo.link;
@@ -238,7 +238,12 @@ async function createFolder(req, res, next) {
         parentId: folderId || null,
       },
     });
-    if (!newFolder) return res.render("error", { message: "oh no" });
+
+    if (!newFolder)
+      return res.render("error", {
+        status: 500,
+        error: "Failure creating folder",
+      });
 
     // check if parent in share > update share childrenIds
     const shares = await prisma.shareLink.findMany({
@@ -324,7 +329,6 @@ async function getShareFolder(req, res, next) {
 
 async function shareFolder(req, res, next) {
   const { folderId, shareDuration } = matchedData(req);
-
   try {
     const folderInfo = await prisma.folder.findUnique({
       where: { id: folderId },
@@ -349,22 +353,23 @@ async function shareFolder(req, res, next) {
 async function stopSharingFolder(req, res, next) {
   const { folderId, token } = matchedData(req);
   try {
-    await removeShare(token);
-    const folderInfo = await prisma.folder.findUnique({
-      where: { id: folderId },
-    });
+    const folderInfo = await removeShare(token, folderId);
     res.redirect(`/user/folder/${folderInfo.parentId ?? 0}`);
   } catch (error) {
     next(error);
   }
 }
 
-async function removeShare(token) {
+async function removeShare(token, folderId) {
   try {
     const delRes = await prisma.shareLink.delete({
       where: { token },
+      include: { folder: true },
     });
+    console.log(delRes);
+
     if (!delRes) throw new Error("Server error");
+    return delRes.folder;
   } catch (error) {
     console.log(error);
     throw new Error("Oh no");

@@ -65,8 +65,8 @@ const validateFolderName = [
 
 const validateShareTime = [
   body("shareDuration")
-    .isInt({ min: 1 })
-    .withMessage("Share duration has to be a positive number")
+    .isInt({ min: 1, max: 10080 })
+    .withMessage("Share duration has to be between 1 and 10080 minutes")
     .toInt(),
 ];
 const validateToken = [param("token").isUUID().withMessage("Invalid request")];

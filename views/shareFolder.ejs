@@ -17,8 +17,12 @@
                 <div class="form-content">
                   <fieldset>
                     <legend>For how long would you like to share this folder?</legend>
-                        <input type="radio" id="2min" name="shareDuration" value="2" checked />
+                      <input type="radio" id="2min" name="shareDuration" value="2" checked />
                       <label for="shareDuration">2 Minutes</label>
+                      <input type="radio" id="2days" name="shareDuration" value="2880" />
+                      <label for="shareDuration">2 Days</label>
+                      <input type="radio" id="7days" name="shareDuration" value="10080" />
+                      <label for="shareDuration">7 Days</label>
                     </div> 
                 </fieldset>
                 <input type="hidden" name="token" value="<%= locals.link %>">
