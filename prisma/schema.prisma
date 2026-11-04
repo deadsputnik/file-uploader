@@ -52,6 +52,6 @@ model ShareLink {
   token       String   @unique @default(uuid())
   expiresAt   DateTime
   folder      Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folderId    Int
+  folderId    Int      @unique
   childrenIds Int[]
 }
