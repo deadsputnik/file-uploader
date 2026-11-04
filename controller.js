@@ -3,7 +3,6 @@ import { prisma } from "./lib/prisma.js";
 import bcrypt from "bcryptjs";
 import passport from "passport";
 import { unlink } from "node:fs/promises";
-import { sign } from "node:crypto";
 
 function errorHandler(error, req, res, next) {
   console.log("ERROR HANDLER");
@@ -442,11 +441,11 @@ async function getSharedFolder(req, res, next) {
     });
 
     const folders = await prisma.folder.findMany({
-      where: { parentId: currFolder.id || null },
+      where: { parentId: currFolder.id },
     });
 
     const files = await prisma.file.findMany({
-      where: { folderId: currFolder.id || null },
+      where: { folderId: currFolder.id },
     });
 
     res.render("sharedFiles", {
