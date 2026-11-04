@@ -156,9 +156,11 @@ async function deleteFile(req, res, next) {
     const delRes = await prisma.file.delete({
       where: { id: fileId, ownerId: req.user.id },
     });
+
     await unlink(delRes.link).catch((e) => {
       if (e.code !== "ENOENT") throw e;
     });
+
     res.redirect(req.get("Referer") || "/");
   } catch (error) {
     next(error);
@@ -286,8 +288,6 @@ async function deleteFolder(req, res, next) {
       select: { link: true },
     });
 
-    await Promise.all(fileList.map((file) => unlink(file.link)));
-
     const result = await prisma.folder.delete({
       where: { id: folderId },
     });
@@ -295,6 +295,14 @@ async function deleteFolder(req, res, next) {
     if (!result) {
       return next(new Error("Server Error"));
     }
+
+    await Promise.all(
+      fileList.map((file) =>
+        unlink(file.link).catch((e) => {
+          if (e.code !== "ENOENT") throw e;
+        }),
+      ),
+    );
 
     res.redirect(req.get("Referer") || "/");
   } catch (error) {
