@@ -49,6 +49,12 @@ function handleFolderNameValidation(req, res, next) {
 
 async function handleTokenValidation(req, res, next) {
   const token = req.params.token;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res
+      .status(400)
+      .render("error", { status: 400, error: "Invalid request" });
+  }
   try {
     const shareInfo = await prisma.shareLink.findUnique({
       where: { token },
@@ -71,13 +77,6 @@ async function handleTokenValidation(req, res, next) {
     }
   } catch (error) {
     return next(error);
-  }
-
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res
-      .status(500)
-      .render("error", { status: 500, error: "Server error" });
   }
   next();
 }
