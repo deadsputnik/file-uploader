@@ -152,15 +152,16 @@ async function download(req, res, next) {
 async function deleteFile(req, res, next) {
   const { fileId } = matchedData(req);
   try {
-    const delRes = await prisma.file.delete({
+    const file = await prisma.file.delete({
       where: { id: fileId, ownerId: req.user.id },
     });
 
-    await unlink(delRes.link).catch((e) => {
+    await unlink(file.link).catch((e) => {
       if (e.code !== "ENOENT") throw e;
     });
 
-    res.redirect(req.get("Referer") || "/");
+    console.log(file.folderId);
+    res.redirect(`/user/folder/${file.folderId || "0"}`);
   } catch (error) {
     next(error);
   }
@@ -249,13 +250,13 @@ async function createFolder(req, res, next) {
 
     for (const share of shares) {
       const childrenIds = await getDescendantIds(share.folderId);
-      const response = await prisma.shareLink.update({
+      const shareUpdateRes = await prisma.shareLink.update({
         where: { id: share.id },
         data: { childrenIds },
       });
     }
 
-    res.redirect(req.get("Referer") || "/");
+    res.redirect(`/user/folder/${newFolder.parentId || 0}`);
   } catch (error) {
     next(error);
   }
@@ -303,7 +304,7 @@ async function deleteFolder(req, res, next) {
       ),
     );
 
-    res.redirect(req.get("Referer") || "/");
+    res.redirect(`/user/folder/${result.parentId || 0}`);
   } catch (error) {
     next(error);
   }
