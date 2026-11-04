@@ -7,14 +7,7 @@ const validateRegistration = [
     .notEmpty()
     .withMessage("Username is required")
     .isAlphanumeric()
-    .withMessage("Username must only contain letters and numbers")
-    .custom(async (value) => {
-      const exists = await prisma.user.findUnique({
-        where: { username: value },
-        select: { id: true },
-      });
-      if (exists) throw new Error("Username already taken");
-    }),
+    .withMessage("Username must only contain letters and numbers"),
   body("password")
     .notEmpty()
     .withMessage("Password is required")

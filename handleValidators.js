@@ -11,7 +11,7 @@ function handleRequestValidation(req, res, next) {
   next();
 }
 
-function handleRegistrationValidation(req, res, next) {
+async function handleRegistrationValidation(req, res, next) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const inputData = {};

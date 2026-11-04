@@ -79,19 +79,26 @@ function getLogin(req, res) {
 }
 
 async function registerAccount(req, res, next) {
-  console.log("Registering account");
   const { username, password } = matchedData(req);
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         username: username,
         passwordHash: hashedPassword,
       },
     });
-    if (!user) return next(new Error("Server Error"));
+
     res.redirect("/");
   } catch (error) {
+    if (error.code === "P2002") {
+      const inputData = {};
+      inputData.username = req.body.username;
+      return res.status(400).render("register", {
+        inputData,
+        errors: [{ msg: "Username already exists" }],
+      });
+    }
     next(error);
   }
 }
