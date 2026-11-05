@@ -9,7 +9,6 @@ function errorHandler(error, req, res, next) {
   if (res.headersSent) {
     return next(error);
   }
-
   console.log(error);
   res.status(500).render("./error.ejs", { status: 500, error: "Server error" });
 }
@@ -18,47 +17,33 @@ function requireAuth(req, res, next) {
   req.user ? next() : res.redirect("/login");
 }
 
-async function checkFolderAuth(folderId, userId) {
-  try {
-    const folder = await prisma.folder.findUnique({
-      where: { id: folderId, ownerId: userId },
-    });
-    return folder ? true : false;
-  } catch (error) {
-    throw new Error(error);
-  }
+async function isFolderOwner(folderId, userId) {
+  const count = await prisma.folder.count({
+    where: { id: folderId, ownerId: userId },
+  });
+  return count > 0;
 }
 
-async function checkFileAuth(fileId, userId) {
-  try {
-    const file = await prisma.file.findUnique({
-      where: { id: fileId, ownerId: userId },
-    });
-    return file ? true : false;
-  } catch (error) {
-    throw new Error(error);
-  }
+async function isFileOwner(fileId, userId) {
+  const count = await prisma.file.count({
+    where: { id: fileId, ownerId: userId },
+  });
+  return count > 0;
 }
 
 async function requireItemOwner(req, res, next) {
   const { folderId, fileId } = matchedData(req);
-  try {
-    if (folderId === 0) return next();
-    let check = false;
-    if (folderId !== 0) {
-      if (folderId) check = await checkFolderAuth(folderId, req.user.id);
-    }
+  if (folderId === 0) return next();
+  const [label, isOwner, id] = folderId
+    ? ["Folder", isFolderOwner, folderId]
+    : ["File", isFileOwner, fileId];
 
-    if (fileId) check = await checkFileAuth(fileId, req.user.id);
-    if (!check)
-      return res.status(404).render("error", {
-        status: 404,
-        error: `${folderId ? "Folder" : "File"} Not Found`,
-      });
-    next();
-  } catch (error) {
-    next(error);
-  }
+  if (!(await isOwner(id, req.user.id)))
+    return res.status(404).render("error", {
+      status: 404,
+      error: `${label} Not Found`,
+    });
+  next();
 }
 
 function getHomepage(req, res) {
