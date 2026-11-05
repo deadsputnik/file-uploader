@@ -121,137 +121,110 @@ function logout(req, res, next) {
 
 async function download(req, res, next) {
   const { fileId } = matchedData(req);
-  try {
-    const fileInfo = await prisma.file.findUnique({
-      where: { id: fileId },
-    });
+  const fileInfo = await prisma.file.findUnique({
+    where: { id: fileId },
+  });
 
-    if (!fileInfo) {
-      return res
-        .status(404)
-        .render("error", { status: 404, error: "File not found" });
-    }
-
-    const path = fileInfo.link;
-    const filename = fileInfo.name;
-    console.log("downloading: " + filename);
-    res.download(path, filename);
-  } catch (error) {
-    next(error);
+  if (!fileInfo) {
+    return res
+      .status(404)
+      .render("error", { status: 404, error: "File not found" });
   }
+
+  const path = fileInfo.link;
+  const filename = fileInfo.name;
+  console.log("downloading: " + filename);
+  res.download(path, filename);
 }
 
 async function deleteFile(req, res, next) {
   const { fileId } = matchedData(req);
-  try {
-    const file = await prisma.file.delete({
-      where: { id: fileId, ownerId: req.user.id },
-    });
+  const file = await prisma.file.delete({
+    where: { id: fileId, ownerId: req.user.id },
+  });
 
-    await unlink(file.link).catch((e) => {
-      if (e.code !== "ENOENT") throw e;
-    });
+  await unlink(file.link).catch((e) => {
+    if (e.code !== "ENOENT") throw e;
+  });
 
-    console.log(file.folderId);
-    res.redirect(`/user/folder/${file.folderId || "0"}`);
-  } catch (error) {
-    next(error);
-  }
+  res.redirect(`/user/folder/${file.folderId || "0"}`);
 }
 
 async function getSharedFolderList(userId) {
-  try {
-    const response = await prisma.shareLink.findMany({
-      where: {
-        folder: {
-          ownerId: userId,
-        },
+  const response = await prisma.shareLink.findMany({
+    where: {
+      folder: {
+        ownerId: userId,
       },
-      select: { childrenIds: true, folderId: true },
-    });
-    const idList = response.flatMap((entry) => entry.childrenIds);
-    const sharedFolderIds = [...new Set(idList)];
+    },
+    select: { childrenIds: true, folderId: true },
+  });
+  const idList = response.flatMap((entry) => entry.childrenIds);
+  const sharedFolderIds = [...new Set(idList)];
 
-    const rootList = response.flatMap((entry) => entry.folderId);
-    const rootIds = [...new Set(rootList)];
+  const rootList = response.flatMap((entry) => entry.folderId);
+  const rootIds = [...new Set(rootList)];
 
-    return { sharedFolderIds, rootIds };
-  } catch (error) {
-    throw new Error(error);
-  }
+  return { sharedFolderIds, rootIds };
 }
 
 async function getFolder(req, res, next) {
   const { folderId } = matchedData(req);
 
-  try {
-    const folders = await prisma.folder.findMany({
-      where: { ownerId: req.user.id, parentId: folderId || null },
-    });
+  const folderInfo =
+    folderId !== 0
+      ? await prisma.folder.findUnique({
+          where: { id: folderId },
+        })
+      : { name: "root", id: 0 };
 
-    const files = await prisma.file.findMany({
-      where: { ownerId: req.user.id, folderId: folderId || null },
-    });
+  const folders = await prisma.folder.findMany({
+    where: { ownerId: req.user.id, parentId: folderId || null },
+  });
 
-    const folderInfo =
-      folderId !== 0
-        ? await prisma.folder.findUnique({
-            where: { id: folderId },
-          })
-        : { name: "root", id: 0 };
+  const files = await prisma.file.findMany({
+    where: { ownerId: req.user.id, folderId: folderId || null },
+  });
 
-    const { sharedFolderIds, rootIds } = await getSharedFolderList(req.user.id);
+  const { sharedFolderIds, rootIds } = await getSharedFolderList(req.user.id);
 
-    const flash = req.session.flash;
-    delete req.session.flash;
-    res.render("files", {
-      folders,
-      files,
-      flash,
-      folderInfo,
-      sharedFolderIds,
-      rootIds,
-    });
-  } catch (error) {
-    next(error);
-  }
+  const flash = req.session.flash;
+  delete req.session.flash;
+
+  res.render("files", {
+    folders,
+    files,
+    flash,
+    folderInfo,
+    sharedFolderIds,
+    rootIds,
+  });
 }
 
 async function createFolder(req, res, next) {
   const { folderId, folderName } = matchedData(req);
-  console.log("creating new folder");
-  try {
-    const newFolder = await prisma.folder.create({
-      data: {
-        name: folderName,
-        ownerId: req.user.id,
-        parentId: folderId || null,
-      },
+  const newFolder = await prisma.folder.create({
+    data: {
+      name: folderName,
+      ownerId: req.user.id,
+      parentId: folderId || null,
+    },
+  });
+
+  // check if parent in share > update share childrenIds
+  const shares = await prisma.shareLink.findMany({
+    where: { childrenIds: { has: newFolder.parentId } },
+  });
+
+  for (const share of shares) {
+    const childrenIds = await getDescendantIds(share.folderId);
+    await prisma.shareLink.update({
+      where: { id: share.id },
+      data: { childrenIds },
     });
-
-    if (!newFolder)
-      return res.render("error", {
-        status: 500,
-        error: "Failure creating folder",
-      });
-
-    // check if parent in share > update share childrenIds
-    const shares = await prisma.shareLink.findMany({
-      where: { childrenIds: { has: newFolder.parentId } },
-    });
-
-    for (const share of shares) {
-      const childrenIds = await getDescendantIds(share.folderId);
-      const shareUpdateRes = await prisma.shareLink.update({
-        where: { id: share.id },
-        data: { childrenIds },
-      });
-    }
-
-    res.redirect(`/user/folder/${newFolder.parentId || 0}`);
-  } catch (error) {
-    next(error);
   }
+
+  res.redirect(`/user/folder/${newFolder.parentId || 0}`);
 }
 
 async function getDescendantIds(folderId) {
@@ -271,89 +244,65 @@ async function getDescendantIds(folderId) {
 
 async function deleteFolder(req, res, next) {
   const { folderId } = matchedData(req);
+  const folderIds = await getDescendantIds(folderId);
 
-  try {
-    const folderIds = await getDescendantIds(folderId);
+  const fileList = await prisma.file.findMany({
+    where: { folderId: { in: folderIds } },
+    select: { link: true },
+  });
 
-    const fileList = await prisma.file.findMany({
-      where: { folderId: { in: folderIds } },
-      select: { link: true },
-    });
+  const result = await prisma.folder.delete({
+    where: { id: folderId },
+  });
 
-    const result = await prisma.folder.delete({
-      where: { id: folderId },
-    });
+  await Promise.all(
+    fileList.map((file) =>
+      unlink(file.link).catch((e) => {
+        if (e.code !== "ENOENT") throw e;
+      }),
+    ),
+  );
 
-    if (!result) {
-      return next(new Error("Server Error"));
-    }
-
-    await Promise.all(
-      fileList.map((file) =>
-        unlink(file.link).catch((e) => {
-          if (e.code !== "ENOENT") throw e;
-        }),
-      ),
-    );
-
-    res.redirect(`/user/folder/${result.parentId || 0}`);
-  } catch (error) {
-    next(error);
-  }
+  res.redirect(`/user/folder/${result.parentId || 0}`);
 }
 
 async function getShareFolder(req, res, next) {
   const { folderId } = matchedData(req);
-  try {
-    const folderInfo = await prisma.folder.findUnique({
-      where: { id: folderId },
-    });
+  const folderInfo = await prisma.folder.findUnique({
+    where: { id: folderId },
+  });
 
-    const shared = await prisma.shareLink.findFirst({
-      where: { folderId },
-    });
+  const shared = await prisma.shareLink.findFirst({
+    where: { folderId },
+  });
 
-    let link = false;
-
-    if (shared) link = shared.token;
-
-    res.render("shareFolder", { folderInfo, link });
-  } catch (error) {
-    next(error);
-  }
+  const link = shared
+    ? shared.token
+    : res.render("shareFolder", { folderInfo, link });
 }
 
 async function shareFolder(req, res, next) {
   const { folderId, shareDuration } = matchedData(req);
-  try {
-    const folderInfo = await prisma.folder.findUnique({
-      where: { id: folderId },
-    });
-    const shareForMs = shareDuration * 60 * 1000;
-    const expiresAt = new Date(Date.now() + shareForMs);
-    const childIds = await getDescendantIds(folderId);
-    const response = await prisma.shareLink.create({
-      data: {
-        expiresAt: expiresAt,
-        folderId: folderId,
-        childrenIds: childIds,
-      },
-    });
-
-    res.render("shareFolder", { folderInfo, link: response.token });
-  } catch (error) {
-    next(error);
-  }
+  const folderInfo = await prisma.folder.findUnique({
+    where: { id: folderId },
+  });
+  const shareForMs = shareDuration * 60 * 1000;
+  const expiresAt = new Date(Date.now() + shareForMs);
+  const childIds = await getDescendantIds(folderId);
+  const response = await prisma.shareLink.create({
+    data: {
+      expiresAt: expiresAt,
+      folderId: folderId,
+      childrenIds: childIds,
+    },
+  });
+  res.render("shareFolder", { folderInfo, link: response.token });
 }
 
 async function stopSharingFolder(req, res, next) {
   const { folderId, token } = matchedData(req);
-  try {
-    const folderInfo = await removeShare(token, folderId);
-    res.redirect(`/user/folder/${folderInfo.parentId ?? 0}`);
-  } catch (error) {
-    next(error);
-  }
+  const folderInfo = await removeShare(token, folderId);
+  res.redirect(`/user/folder/${folderInfo.parentId ?? 0}`);
 }
 
 async function removeShare(token, folderId) {
@@ -366,91 +315,79 @@ async function removeShare(token, folderId) {
 
 async function requireShareAccess(req, res, next) {
   const { token, folderId, fileId } = matchedData(req);
-  try {
-    const shareInfo = await prisma.shareLink.findUnique({
-      where: { token },
+  const shareInfo = await prisma.shareLink.findUnique({
+    where: { token },
+  });
+
+  if (fileId) {
+    const fileInfo = await prisma.file.findUnique({
+      where: { id: fileId },
     });
-
-    if (fileId) {
-      const fileInfo = await prisma.file.findUnique({
-        where: { id: fileId },
-      });
-      if (!fileInfo || !shareInfo.childrenIds.includes(fileInfo.folderId)) {
-        console.log("Unauthorised access blocked file:", fileInfo.name);
-        return res
-          .status(404)
-          .render("error", { status: 404, error: "File not found" });
-      }
+    if (!fileInfo || !shareInfo.childrenIds.includes(fileInfo.folderId)) {
+      console.log("Unauthorised access blocked file:", fileInfo.name);
+      return res
+        .status(404)
+        .render("error", { status: 404, error: "File not found" });
     }
-
-    if (folderId) {
-      const folderInfo = await prisma.folder.findUnique({
-        where: { id: folderId },
-      });
-      if (!folderInfo || !shareInfo.childrenIds.includes(folderInfo.id)) {
-        console.log("Unauthorised access blocked. Folder:", folderInfo.name);
-        return res
-          .status(404)
-          .render("error", { status: 404, error: "Folder not found" });
-      }
-    }
-
-    next();
-  } catch (error) {
-    next(error);
   }
+
+  if (folderId) {
+    const folderInfo = await prisma.folder.findUnique({
+      where: { id: folderId },
+    });
+    if (!folderInfo || !shareInfo.childrenIds.includes(folderInfo.id)) {
+      console.log("Unauthorised access blocked. Folder:", folderInfo.name);
+      return res
+        .status(404)
+        .render("error", { status: 404, error: "Folder not found" });
+    }
+  }
+
+  next();
 }
 
 async function shareRedirect(req, res, next) {
   const { token } = matchedData(req);
+  const shareInfo = await prisma.shareLink.findUnique({
+    where: { token: token },
+  });
 
-  try {
-    const shareInfo = await prisma.shareLink.findUnique({
-      where: { token: token },
-    });
-
-    if (!shareInfo) {
-      return res
-        .status(404)
-        .render("error", { status: 404, error: "Share not found" });
-    }
-
-    res.redirect(`/share/${token}/folder/${shareInfo.folderId}`);
-  } catch (error) {
-    next(error);
+  if (!shareInfo) {
+    return res
+      .status(404)
+      .render("error", { status: 404, error: "Share not found" });
   }
+
+  res.redirect(`/share/${token}/folder/${shareInfo.folderId}`);
 }
 
 async function getSharedFolder(req, res, next) {
   const { token, folderId } = matchedData(req);
-  try {
-    const shareInfo = await prisma.shareLink.findUnique({
-      where: { token },
-    });
-    const folderIsRoot = shareInfo.folderId == folderId;
+  const shareInfo = await prisma.shareLink.findUnique({
+    where: { token },
+  });
 
-    const currFolder = await prisma.folder.findUnique({
-      where: { id: folderId },
-    });
+  const folderIsRoot = shareInfo.folderId == folderId;
 
-    const folders = await prisma.folder.findMany({
-      where: { parentId: currFolder.id },
-    });
+  const currFolder = await prisma.folder.findUnique({
+    where: { id: folderId },
+  });
 
-    const files = await prisma.file.findMany({
-      where: { folderId: currFolder.id },
-    });
+  const folders = await prisma.folder.findMany({
+    where: { parentId: currFolder.id },
+  });
 
-    res.render("sharedFiles", {
-      folders,
-      files,
-      currFolder,
-      folderIsRoot,
-      token,
-    });
-  } catch (error) {
-    next(error);
-  }
+  const files = await prisma.file.findMany({
+    where: { folderId: currFolder.id },
+  });
+
+  res.render("sharedFiles", {
+    folders,
+    files,
+    currFolder,
+    folderIsRoot,
+    token,
+  });
 }
 
 export {
