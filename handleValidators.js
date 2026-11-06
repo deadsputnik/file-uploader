@@ -1,5 +1,6 @@
 import { validationResult } from "express-validator";
 import { prisma } from "./lib/prisma.js";
+import { notFoundError } from "./helpers/notFoundError.js";
 
 function handleRequestValidation(req, res, next) {
   const errors = validationResult(req);
@@ -55,16 +56,11 @@ async function handleTokenValidation(req, res, next) {
       .status(400)
       .render("error", { status: 400, error: "Invalid request" });
   }
-  const shareInfo = await prisma.shareLink
-    .findUnique({
-      where: { token },
-    })
-    .catch((e) => {
-      if (e.code === "P2025")
-        return res
-          .status(404)
-          .render("error", { status: 404, error: "Share link not found" });
-    });
+
+  const shareInfo = await prisma.shareLink.findUnique({
+    where: { token },
+  });
+  if (!shareInfo) return next(notFoundError("Share link"));
 
   const now = Date.now();
 
