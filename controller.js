@@ -129,6 +129,7 @@ async function download(req, res) {
   const fileInfo = await prisma.file.findUnique({
     where: { id: fileId },
   });
+  if (!fileInfo) return next(notFoundError("File"));
   const path = fileInfo.link;
   const filename = fileInfo.name;
   console.log("downloading: " + filename);
