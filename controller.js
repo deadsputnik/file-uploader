@@ -124,13 +124,6 @@ async function download(req, res) {
   const fileInfo = await prisma.file.findUnique({
     where: { id: fileId },
   });
-
-  if (!fileInfo) {
-    return res
-      .status(404)
-      .render("error", { status: 404, error: "File not found" });
-  }
-
   const path = fileInfo.link;
   const filename = fileInfo.name;
   console.log("downloading: " + filename);
@@ -244,9 +237,6 @@ async function getDescendantIds(folderId) {
 
 async function deleteFolder(req, res) {
   const { folderId } = matchedData(req);
-  if (folderId === 0) {
-    res.status(404).render("error", { error: "Folder not found" });
-  }
 
   const folderIds = await getDescendantIds(folderId);
 
