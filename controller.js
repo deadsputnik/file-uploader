@@ -322,7 +322,7 @@ async function requireShareAccess(req, res, next) {
       where: { id: fileId },
     });
     if (!fileInfo || !shareInfo.childrenIds.includes(fileInfo.folderId)) {
-      console.log("Unauthorised access blocked file:", fileInfo.name);
+      console.log("Unauthorised access blocked file:", fileInfo?.name);
       return next(notFoundError("File"));
     }
   }
@@ -332,7 +332,7 @@ async function requireShareAccess(req, res, next) {
       where: { id: folderId },
     });
     if (!folderInfo || !shareInfo.childrenIds.includes(folderInfo.id)) {
-      console.log("Unauthorised access blocked. Folder:", folderInfo.name);
+      console.log("Unauthorised access blocked. Folder:", folderInfo?.name);
       return next(notFoundError("Folder"));
     }
   }
