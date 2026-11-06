@@ -21,6 +21,7 @@ import {
   shareRedirect,
   requireItemOwner,
   stopSharingFolder,
+  rejectRootFolder,
 } from "./controller.js";
 import {
   handleRegistrationValidation,
@@ -43,148 +44,90 @@ import multer from "multer";
 const upload = multer({ dest: "./filestore/" });
 
 const router = Router();
-
-// pages non auth
 router.get("/", getHomepage);
+
+// USER ACC ACTIONS
 router.get("/register", getRegister);
 router.get("/login", getLogin);
 
-// pages auth
-router.get(
-  "/user/folder/:folderId/upload",
-  requireAuth,
-  validateFolderId,
-  handleRequestValidation,
-  requireItemOwner,
-  getAddFile,
-);
-
-router.get(
-  "/user/file/:fileId/download",
-  requireAuth,
-  validateFileId,
-  handleRequestValidation,
-  requireItemOwner,
-  download,
-);
-
-router.get(
-  "/user/folder/:folderId",
-  requireAuth,
-  validateFolderId,
-  handleRequestValidation,
-  requireItemOwner,
-  getFolder,
-);
-
-router.get(
-  "/user/folder/:folderId/share",
-  requireAuth,
-  validateFolderId,
-  handleRequestValidation,
-  requireItemOwner,
-  getShareFolder,
-);
-
-// file sharing access
-router.get(
-  "/share/:token/",
-  validateToken,
-  handleTokenValidation,
-  shareRedirect,
-);
-
-router.get(
-  "/share/:token/folder/:folderId",
-  validateToken,
-  handleTokenValidation,
-  validateFolderId,
-  handleRequestValidation,
-  requireShareAccess,
-  getSharedFolder,
-);
-
-router.get(
-  "/share/:token/file/:fileId/download",
-  validateToken,
-  handleTokenValidation,
-  validateFileId,
-  handleRequestValidation,
-  requireShareAccess,
-  download,
-);
-
-// POST USER FLOW
 router.post(
   "/register",
   validateRegistration,
   handleRegistrationValidation,
   registerAccount,
 );
-
 router.post("/login", validateSignIn, handleSignInValidation, signInUser);
 router.post("/logout", requireAuth, logout);
 
-// POST AUTH FILE
-router.post(
-  "/user/folder/:folderId/upload",
-  requireAuth,
+// USER PATHS
+router.use("/user/", requireAuth);
+
+// USER FOLDER
+router.use(
+  "/user/folder/:folderId",
   validateFolderId,
   handleRequestValidation,
   requireItemOwner,
-  upload.array("uploaded_file"),
-  uploadFile,
 );
-
-router.post(
-  "/user/file/:fileId/delete",
-  requireAuth,
-  validateFileId,
-  handleRequestValidation,
-  requireItemOwner,
-  deleteFile,
-);
-
-// POST AUTH FOLDER
-//  need to create /user/folder/:folderId/new-folder
 router.post(
   "/user/folder/:folderId/create-new-folder",
-  requireAuth,
-  validateFolderId,
-  handleRequestValidation,
   validateFolderName,
   handleFolderNameValidation,
-  requireItemOwner,
   createFolder,
 );
-
-router.post(
-  "/user/folder/:folderId/delete",
-  requireAuth,
-  validateFolderId,
-  handleRequestValidation,
-  requireItemOwner,
-  deleteFolder,
-);
+router.get("/user/folder/:folderId", getFolder);
+router.get("/user/folder/:folderId/upload", getAddFile);
+router.get("/user/folder/:folderId/share", rejectRootFolder, getShareFolder);
 
 router.post(
   "/user/folder/:folderId/share",
-  requireAuth,
-  validateFolderId,
   validateShareTime,
   handleRequestValidation,
-  requireItemOwner,
+  rejectRootFolder,
   shareFolder,
 );
-
 router.post(
   "/user/folder/:folderId/stopShare",
-  requireAuth,
-  validateFolderId,
   validateDeleteToken,
   handleRequestValidation,
-  requireItemOwner,
+  rejectRootFolder,
   stopSharingFolder,
 );
+router.post(
+  "/user/folder/:folderId/upload",
+  upload.array("uploaded_file"),
+  uploadFile,
+);
+router.post("/user/folder/:folderId/delete", rejectRootFolder, deleteFolder);
+// USER FILE
+router.use(
+  "/user/file/:fileId",
+  validateFileId,
+  handleRequestValidation,
+  requireItemOwner,
+);
+router.get("/user/file/:fileId/download", download);
+
+router.post("/user/file/:fileId/delete", deleteFile);
+
+// SHARED FILES
+router.use("/share/:token/", validateToken, handleTokenValidation);
+router.get("/share/:token/", shareRedirect);
+
+router.use(
+  "/share/:token/folder/:folderId",
+  validateFolderId,
+  handleRequestValidation,
+  requireShareAccess,
+);
+router.get("/share/:token/folder/:folderId", getSharedFolder);
+
+router.use(
+  "/share/:token/file/:fileId",
+  validateFileId,
+  handleRequestValidation,
+  requireShareAccess,
+);
+router.get("/share/:token/file/:fileId/download", download);
 
 export { router };
