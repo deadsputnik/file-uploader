@@ -3,13 +3,21 @@ import { prisma } from "./lib/prisma.js";
 import bcrypt from "bcryptjs";
 import passport from "passport";
 import { unlink } from "node:fs/promises";
+import { notFoundError } from "./helpers/notFoundError.js";
 
 function errorHandler(error, req, res, next) {
-  console.log("ERROR HANDLER");
+  console.log("ERROR HANDLER", error);
+
   if (res.headersSent) {
     return next(error);
   }
-  console.log(error);
+
+  if (error.status === 404) {
+    return res
+      .status(404)
+      .render("error", { status: 404, error: error.message });
+  }
+
   res.status(500).render("./error.ejs", { status: 500, error: "Server error" });
 }
 
@@ -38,11 +46,8 @@ async function requireItemOwner(req, res, next) {
     ? ["Folder", isFolderOwner, folderId]
     : ["File", isFileOwner, fileId];
 
-  if (!(await isOwner(id, req.user.id)))
-    return res.status(404).render("error", {
-      status: 404,
-      error: `${label} Not Found`,
-    });
+  if (!(await isOwner(id, req.user.id))) return next(notFoundError(label));
+
   next();
 }
 
@@ -318,9 +323,7 @@ async function requireShareAccess(req, res, next) {
     });
     if (!fileInfo || !shareInfo.childrenIds.includes(fileInfo.folderId)) {
       console.log("Unauthorised access blocked file:", fileInfo.name);
-      return res
-        .status(404)
-        .render("error", { status: 404, error: "File not found" });
+      return next(notFoundError("File"));
     }
   }
 
@@ -330,9 +333,7 @@ async function requireShareAccess(req, res, next) {
     });
     if (!folderInfo || !shareInfo.childrenIds.includes(folderInfo.id)) {
       console.log("Unauthorised access blocked. Folder:", folderInfo.name);
-      return res
-        .status(404)
-        .render("error", { status: 404, error: "Folder not found" });
+      return next(notFoundError("Folder"));
     }
   }
   next();
@@ -344,11 +345,7 @@ async function shareRedirect(req, res) {
     where: { token: token },
   });
 
-  if (!shareInfo) {
-    return res
-      .status(404)
-      .render("error", { status: 404, error: "Share not found" });
-  }
+  if (!shareInfo) return next(notFoundError("Share"));
 
   res.redirect(`/share/${token}/folder/${shareInfo.folderId}`);
 }
