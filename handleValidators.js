@@ -55,28 +55,27 @@ async function handleTokenValidation(req, res, next) {
       .status(400)
       .render("error", { status: 400, error: "Invalid request" });
   }
-  try {
-    const shareInfo = await prisma.shareLink.findUnique({
+  const shareInfo = await prisma.shareLink
+    .findUnique({
       where: { token },
+    })
+    .catch((e) => {
+      if (e.code === "P2025")
+        return res
+          .status(404)
+          .render("error", { status: 404, error: "Share link not found" });
     });
-    if (!shareInfo)
-      return res
-        .status(404)
-        .render("error", { status: 404, error: "Share link not found" });
 
-    const now = Date.now();
+  const now = Date.now();
 
-    if (shareInfo.expiresAt - now < 0) {
-      await prisma.shareLink.delete({
-        where: { token: token },
-      });
+  if (shareInfo.expiresAt - now < 0) {
+    await prisma.shareLink.delete({
+      where: { token: token },
+    });
 
-      return res
-        .status(410)
-        .render("error", { status: 410, error: "Share expired" });
-    }
-  } catch (error) {
-    return next(error);
+    return res
+      .status(410)
+      .render("error", { status: 410, error: "Share expired" });
   }
   next();
 }
