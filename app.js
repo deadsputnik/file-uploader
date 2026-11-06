@@ -6,6 +6,7 @@ import express from "express";
 import passport from "passport";
 import "./config/passport.js";
 import { router } from "./router.js";
+import { notFoundError } from "./helpers/notFoundError.js";
 import { errorHandler } from "./controller.js";
 
 const app = express();
@@ -56,6 +57,9 @@ app.use((req, res, next) => {
 });
 
 app.use("/", router);
+app.use((req, res, next) => {
+  next(notFoundError("Page"));
+});
 app.use(errorHandler);
 
 const PORT = 3000;
