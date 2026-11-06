@@ -341,6 +341,7 @@ async function requireShareAccess(req, res, next) {
 
 async function shareRedirect(req, res) {
   const { token } = matchedData(req);
+  console.log(token);
   const shareInfo = await prisma.shareLink.findUnique({
     where: { token: token },
   });
