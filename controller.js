@@ -119,7 +119,7 @@ function logout(req, res, next) {
   });
 }
 
-async function download(req, res, next) {
+async function download(req, res) {
   const { fileId } = matchedData(req);
   const fileInfo = await prisma.file.findUnique({
     where: { id: fileId },
@@ -137,7 +137,7 @@ async function download(req, res, next) {
   res.download(path, filename);
 }
 
-async function deleteFile(req, res, next) {
+async function deleteFile(req, res) {
   const { fileId } = matchedData(req);
   const file = await prisma.file.delete({
     where: { id: fileId, ownerId: req.user.id },
@@ -201,7 +201,7 @@ async function getFolder(req, res, next) {
   });
 }
 
-async function createFolder(req, res, next) {
+async function createFolder(req, res) {
   const { folderId, folderName } = matchedData(req);
   const newFolder = await prisma.folder.create({
     data: {
@@ -242,8 +242,12 @@ async function getDescendantIds(folderId) {
   return ids;
 }
 
-async function deleteFolder(req, res, next) {
+async function deleteFolder(req, res) {
   const { folderId } = matchedData(req);
+  if (folderId === 0) {
+    res.status(404).render("error", { error: "Folder not found" });
+  }
+
   const folderIds = await getDescendantIds(folderId);
 
   const fileList = await prisma.file.findMany({
@@ -266,7 +270,7 @@ async function deleteFolder(req, res, next) {
   res.redirect(`/user/folder/${result.parentId || 0}`);
 }
 
-async function getShareFolder(req, res, next) {
+async function getShareFolder(req, res) {
   const { folderId } = matchedData(req);
   const folderInfo = await prisma.folder.findUnique({
     where: { id: folderId },
@@ -276,12 +280,11 @@ async function getShareFolder(req, res, next) {
     where: { folderId },
   });
 
-  const link = shared
-    ? shared.token
-    : res.render("shareFolder", { folderInfo, link });
+  const link = shared ? shared.token : null;
+  res.render("shareFolder", { folderInfo, link });
 }
 
-async function shareFolder(req, res, next) {
+async function shareFolder(req, res) {
   const { folderId, shareDuration } = matchedData(req);
   const folderInfo = await prisma.folder.findUnique({
     where: { id: folderId },
@@ -299,7 +302,7 @@ async function shareFolder(req, res, next) {
   res.render("shareFolder", { folderInfo, link: response.token });
 }
 
-async function stopSharingFolder(req, res, next) {
+async function stopSharingFolder(req, res) {
   const { folderId, token } = matchedData(req);
   const folderInfo = await removeShare(token, folderId);
   res.redirect(`/user/folder/${folderInfo.parentId ?? 0}`);
@@ -342,11 +345,10 @@ async function requireShareAccess(req, res, next) {
         .render("error", { status: 404, error: "Folder not found" });
     }
   }
-
   next();
 }
 
-async function shareRedirect(req, res, next) {
+async function shareRedirect(req, res) {
   const { token } = matchedData(req);
   const shareInfo = await prisma.shareLink.findUnique({
     where: { token: token },
@@ -361,7 +363,7 @@ async function shareRedirect(req, res, next) {
   res.redirect(`/share/${token}/folder/${shareInfo.folderId}`);
 }
 
-async function getSharedFolder(req, res, next) {
+async function getSharedFolder(req, res) {
   const { token, folderId } = matchedData(req);
   const shareInfo = await prisma.shareLink.findUnique({
     where: { token },
@@ -390,6 +392,12 @@ async function getSharedFolder(req, res, next) {
   });
 }
 
+function rejectRootFolder(req, res, next) {
+  const { folderId } = matchedData(req);
+  if (folderId === 0) return res.redirect("/user/folder/0");
+  next();
+}
+
 export {
   errorHandler,
   requireAuth,
@@ -413,4 +421,5 @@ export {
   requireShareAccess,
   getSharedFolder,
   shareRedirect,
+  rejectRootFolder,
 };
